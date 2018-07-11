@@ -23,21 +23,19 @@ public class CameraRaycaster : MonoBehaviour
         get { return m_layerHit; }
     }
 
-    public delegate void OnLayerChanged(); // declare new delegate
-    public OnLayerChanged layerChangedObservers; // instantiate an oberserver set
-
-    void SomeLayerChangeHandler() {
-        print("I handled it!");
-    }
+    public delegate void OnLayerChange(Layer newLayer); // declare new delegate type
+    public event OnLayerChange layerChangeObservers; // instantiate an observer set (list of observers)
+        // using "event" keyword, protects the layerChangeObservers from overwriting list of observers with "=" sign
 
     void Start() // TODO Awake?
     {
         viewCamera = Camera.main;
-        layerChangedObservers += SomeLayerChangeHandler;
+      //  layerChangeObservers(); // call the delegates
     }
 
     void Update()
     {
+        Layer prevLayer = layerHit;
         // Look for and return priority layer hit
         foreach (Layer layer in layerPriorities)
         {
@@ -46,6 +44,9 @@ public class CameraRaycaster : MonoBehaviour
             {
                 m_hit = hit.Value;
                 m_layerHit = layer;
+                if (prevLayer != m_layerHit) {
+                    layerChangeObservers(layer);
+                }
                 return;
             }
         }
@@ -53,6 +54,10 @@ public class CameraRaycaster : MonoBehaviour
         // Otherwise return background hit
         m_hit.distance = distanceToBackground;
         m_layerHit = Layer.RaycastEndStop;
+        if (prevLayer != m_layerHit)
+        {
+            layerChangeObservers(layer);
+        }
     }
 
     RaycastHit? RaycastForLayer(Layer layer)
