@@ -45,7 +45,7 @@ public class CameraRaycaster : MonoBehaviour
                 m_hit = hit.Value;
                 m_layerHit = layer;
                 if (prevLayer != m_layerHit) {
-                    layerChangeObservers(layer);
+                    layerChangeObservers(layerHit);
                 }
                 return;
             }
@@ -56,7 +56,7 @@ public class CameraRaycaster : MonoBehaviour
         m_layerHit = Layer.RaycastEndStop;
         if (prevLayer != m_layerHit)
         {
-            layerChangeObservers(layer);
+            layerChangeObservers(layerHit);
         }
     }
 

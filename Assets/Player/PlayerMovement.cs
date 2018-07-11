@@ -7,10 +7,10 @@ public class PlayerMovement : MonoBehaviour
 {
     ThirdPersonCharacter thirdPersonCharacter;   // A reference to the ThirdPersonCharacter on the object
     CameraRaycaster cameraRaycaster;
-    Vector3 currentClickTarget;
+    Vector3 currentDestination, clickPoint;
 
-    [SerializeField]
-    float walkMoveStopRadius = 0.20f;
+    [SerializeField] float walkMoveStopRadius = 0.20f;
+    [SerializeField] float attachMoveStopRadius = 5f;
 
     bool isInDirectMode = false;
 
@@ -18,7 +18,7 @@ public class PlayerMovement : MonoBehaviour
     {
         cameraRaycaster = Camera.main.GetComponent<CameraRaycaster>();
         thirdPersonCharacter = GetComponent<ThirdPersonCharacter>();
-        currentClickTarget = transform.position;
+        currentDestination = transform.position;
     }
 
     // Fixed update is called in sync with physics
@@ -26,7 +26,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.G)) {
             isInDirectMode = !isInDirectMode;
-            currentClickTarget = transform.position; // clear the click target
+            currentDestination = transform.position; // clear the click target
         }
 
         if (isInDirectMode)
@@ -52,25 +52,52 @@ public class PlayerMovement : MonoBehaviour
     {
         if (Input.GetMouseButton(0))
         {
+            clickPoint = cameraRaycaster.hit.point;
             switch (cameraRaycaster.layerHit)
             {
                 case Layer.Walkable:
-                    currentClickTarget = cameraRaycaster.hit.point;
+                    currentDestination = ShortDestination(clickPoint, walkMoveStopRadius);
                     break;
                 case Layer.Enemy:
+                    currentDestination = ShortDestination(clickPoint, attachMoveStopRadius);
                     break;
             }
         }
 
-        float distanceToTravel = Vector3.Distance(currentClickTarget, transform.position);
-        if (distanceToTravel > walkMoveStopRadius)
+        WalkToDestination();
+    }
+
+    private void WalkToDestination()
+    {
+        float distanceToTravel = Vector3.Distance(currentDestination, transform.position);
+        if (distanceToTravel >= 0)
         {
-            thirdPersonCharacter.Move(currentClickTarget - transform.position, false, false);
+            thirdPersonCharacter.Move(currentDestination - transform.position, false, false);
         }
         else
         {
             thirdPersonCharacter.Move(Vector3.zero, false, false);
         }
+    }
+
+
+    Vector3 ShortDestination(Vector3 destination, float shortening)
+    {
+        Vector3 reductionVector = (destination - transform.position).normalized * shortening;
+        return destination - reductionVector;
+    }
+
+    void OnDrawGizmos()
+    {
+        // Draw Movement Gizmos
+        Gizmos.color = Color.black;
+        Gizmos.DrawLine(transform.position, currentDestination);
+        Gizmos.DrawSphere(currentDestination, 0.15f);
+        Gizmos.DrawSphere(clickPoint, 0.1f);
+
+        // Draw attack sphere
+        Gizmos.color = new Color(255,0,0,0.5f);
+        Gizmos.DrawWireSphere(transform.position, attachMoveStopRadius);
     }
 }
 
